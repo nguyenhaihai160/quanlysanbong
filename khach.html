@@ -26,6 +26,7 @@ button{
 background:#27ae60;
 color:white;
 border:none;
+cursor:pointer;
 }
 
 .box{
@@ -73,17 +74,44 @@ margin:auto;
 
 function book(){
 
-let data={
-date:document.getElementById("date").value,
-field:document.getElementById("field").value,
-start:document.getElementById("start").value,
-end:document.getElementById("end").value,
-name:document.getElementById("name").value,
-phone:document.getElementById("phone").value
-}
+let date=document.getElementById("date").value
+let field=document.getElementById("field").value
+let start=document.getElementById("start").value
+let end=document.getElementById("end").value
+let name=document.getElementById("name").value
+let phone=document.getElementById("phone").value
 
 let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
 
+// kiểm tra trùng sân
+for(let b of bookings){
+
+if(
+b.date===date &&
+b.field===field &&
+(
+(start>=b.start && start<b.end) ||
+(end>b.start && end<=b.end) ||
+(start<=b.start && end>=b.end)
+)
+){
+document.getElementById("msg").innerHTML="❌ Sân đã có người đặt trong giờ này!"
+return
+}
+
+}
+
+// tạo dữ liệu đặt sân
+let data={
+date:date,
+field:field,
+start:start,
+end:end,
+name:name,
+phone:phone
+}
+
+// lưu
 bookings.push(data)
 
 localStorage.setItem("bookings",JSON.stringify(bookings))
