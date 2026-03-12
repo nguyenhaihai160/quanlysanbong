@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <title>Đặt Sân Bóng</title>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <style>
 
 body{
@@ -21,7 +18,7 @@ h1{color:#27ae60}
 input,select,button{
 width:90%;
 padding:12px;
-margin:10px;
+margin:8px;
 font-size:16px;
 }
 
@@ -29,7 +26,14 @@ button{
 background:#27ae60;
 color:white;
 border:none;
-cursor:pointer;
+}
+
+.box{
+background:white;
+padding:20px;
+border-radius:10px;
+max-width:400px;
+margin:auto;
 }
 
 </style>
@@ -37,11 +41,11 @@ cursor:pointer;
 
 <body>
 
-<h1>⚽ ĐẶT SÂN BÓNG</h1>
+<div class="box">
 
-<input id="name" placeholder="Tên khách">
+<h1>⚽ Đặt Sân Bóng</h1>
 
-<input id="phone" placeholder="SĐT">
+<input type="date" id="date">
 
 <select id="field">
 <option>Sân 1</option>
@@ -49,55 +53,42 @@ cursor:pointer;
 <option>Sân 3</option>
 </select>
 
-<input type="date" id="date">
-
-<label>Bắt đầu</label>
+<label>Giờ bắt đầu</label>
 <input type="time" id="start">
 
-<label>Kết thúc</label>
+<label>Giờ kết thúc</label>
 <input type="time" id="end">
 
-<button onclick="book()">Đặt sân</button>
+<input placeholder="Tên khách" id="name">
+
+<input placeholder="Số điện thoại" id="phone">
+
+<button onclick="book()">Đặt Sân</button>
+
+<p id="msg"></p>
+
+</div>
 
 <script>
 
-const firebaseConfig={
-apiKey:"YOUR_KEY",
-authDomain:"YOUR_DOMAIN",
-databaseURL:"YOUR_DB_URL",
-projectId:"YOUR_PROJECT"
-}
-
-firebase.initializeApp(firebaseConfig)
-
-let db=firebase.database()
-
 function book(){
 
-let name=document.getElementById("name").value
-let phone=document.getElementById("phone").value
-let field=document.getElementById("field").value
-let date=document.getElementById("date").value
-let start=document.getElementById("start").value
-let end=document.getElementById("end").value
-
-if(!name||!phone||!date||!start||!end){
-alert("Nhập đầy đủ thông tin")
-return
-}
-
 let data={
-name,
-phone,
-field,
-date,
-start,
-end
+date:document.getElementById("date").value,
+field:document.getElementById("field").value,
+start:document.getElementById("start").value,
+end:document.getElementById("end").value,
+name:document.getElementById("name").value,
+phone:document.getElementById("phone").value
 }
 
-db.ref("bookings").push(data)
+let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
 
-alert("Đặt sân thành công!")
+bookings.push(data)
+
+localStorage.setItem("bookings",JSON.stringify(bookings))
+
+document.getElementById("msg").innerHTML="✅ Đặt sân thành công!"
 
 }
 
