@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản Lý Sân Bóng</title>
+
+<style>
+body{
+font-family:Arial;
+background:#f2f2f2;
+padding:20px;
+}
+
+h1{
+text-align:center;
+}
+
+.box{
+background:white;
+padding:20px;
+border-radius:10px;
+max-width:800px;
+margin:auto;
+}
+
+input,select{
+padding:10px;
+margin:5px;
+}
+
+button{
+padding:10px 20px;
+background:#27ae60;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+table{
+width:100%;
+margin-top:20px;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:10px;
+text-align:center;
+}
+</style>
+</head>
+
+<body>
+
+<h1>⚽ Quản Lý Sân Bóng</h1>
+
+<div class="box">
+
+<input id="ten" placeholder="Tên khách">
+
+<select id="san">
+<option>Sân 1</option>
+<option>Sân 2</option>
+<option>Sân 3</option>
+</select>
+
+<input type="time" id="gio">
+
+<button onclick="datSan()">Đặt sân</button>
+
+<table id="bang">
+<tr>
+<th>Mã</th>
+<th>Khách</th>
+<th>Sân</th>
+<th>Giờ</th>
+</tr>
+</table>
+
+</div>
+
+<script>
+
+function datSan(){
+
+let ten=document.getElementById("ten").value
+let san=document.getElementById("san").value
+let gio=document.getElementById("gio").value
+
+let ma="SB"+Math.floor(Math.random()*9999)
+
+let table=document.getElementById("bang")
+
+let row=table.insertRow()
+
+row.innerHTML=`
+<td>${ma}</td>
+<td>${ten}</td>
+<td>${san}</td>
+<td>${gio}</td>
+`
+}
+
+</script>
+
+</body>
+</html>
