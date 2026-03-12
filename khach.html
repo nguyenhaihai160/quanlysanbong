@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Đặt Sân Bóng</title>
+
+<style>
+
+body{
+font-family:Arial;
+text-align:center;
+background:#f4f4f4;
+padding:20px;
+}
+
+h1{color:#27ae60}
+
+input,select,button{
+width:90%;
+padding:12px;
+margin:8px;
+font-size:16px;
+}
+
+button{
+background:#27ae60;
+color:white;
+border:none;
+}
+
+.box{
+background:white;
+padding:20px;
+border-radius:10px;
+max-width:400px;
+margin:auto;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h1>⚽ Đặt Sân Bóng</h1>
+
+<input type="date" id="date">
+
+<select id="field">
+<option>Sân 1</option>
+<option>Sân 2</option>
+<option>Sân 3</option>
+</select>
+
+<label>Giờ bắt đầu</label>
+<input type="time" id="start">
+
+<label>Giờ kết thúc</label>
+<input type="time" id="end">
+
+<input placeholder="Tên khách" id="name">
+
+<input placeholder="Số điện thoại" id="phone">
+
+<button onclick="book()">Đặt Sân</button>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+
+function book(){
+
+let data={
+date:document.getElementById("date").value,
+field:document.getElementById("field").value,
+start:document.getElementById("start").value,
+end:document.getElementById("end").value,
+name:document.getElementById("name").value,
+phone:document.getElementById("phone").value
+}
+
+let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
+
+bookings.push(data)
+
+localStorage.setItem("bookings",JSON.stringify(bookings))
+
+document.getElementById("msg").innerHTML="✅ Đặt sân thành công!"
+
+}
+
+</script>
+
+</body>
+</html>
