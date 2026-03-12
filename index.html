@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <title>QUẢN LÝ SÂN BÓNG</title>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
 <style>
 
 body{
@@ -65,6 +67,14 @@ color:#155724;
 .busy{
 background:#f8d7da;
 color:#721c24;
+}
+
+.slotFree{
+background:#d4edda
+}
+
+.slotBusy{
+background:#f8d7da
 }
 
 </style>
@@ -132,13 +142,32 @@ color:#721c24;
 
 <h2 id="revenue">Doanh thu: 0 VNĐ</h2>
 
+<button onclick="exportExcel()">📥 Xuất Excel</button>
+
+<hr>
+
+<h2>🕒 Kiểm tra khung giờ sân</h2>
+
+<table id="timeTable">
+
+<thead>
+<tr>
+<th>Giờ</th>
+<th>Sân 1</th>
+<th>Sân 2</th>
+<th>Sân 3</th>
+</tr>
+</thead>
+
+<tbody id="timeSlots"></tbody>
+
+</table>
+
 <script>
 
 let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
 
 let fields=["Sân 1","Sân 2","Sân 3"]
-
-let alarmPlayed={}
 
 document.getElementById("date").valueAsDate=new Date()
 
@@ -190,14 +219,6 @@ return total
 
 }
 
-function playAlarm(){
-
-let audio=new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg")
-
-audio.play()
-
-}
-
 function checkConflict(field,start,end,date){
 
 let s=toMinutes(start)
@@ -230,11 +251,9 @@ let start=document.getElementById("start").value
 let end=document.getElementById("end").value
 
 if(!date){alert("Chọn ngày");return}
-if(name==""){alert("Nhập tên khách");return}
-if(phone==""){alert("Nhập SĐT");return}
 
 if(toMinutes(end)<=toMinutes(start)){
-alert("Giờ kết thúc phải lớn hơn giờ bắt đầu")
+alert("Giờ kết thúc phải lớn hơn")
 return
 }
 
@@ -246,96 +265,11 @@ return
 let id=generateBookingID()
 
 bookings.push({
-id,
-date,
-name,
-phone,
-field,
-start,
-end
+id,date,name,phone,field,start,end
 })
 
 save()
-
 render()
-
-}
-
-function remainingTime(date,end,field){
-
-let now=new Date()
-
-let endTime=new Date(date+" "+end)
-
-let diff=endTime-now
-
-if(diff<=0){
-
-if(!alarmPlayed[field]){
-playAlarm()
-alarmPlayed[field]=true
-}
-
-return {text:"Hết giờ",class:"end"}
-
-}
-
-let m=Math.floor(diff/60000)
-let s=Math.floor((diff%60000)/1000)
-
-if(m<=10) return {text:m+"m "+s+"s",class:"warning"}
-
-return {text:m+"m "+s+"s",class:"running"}
-
-}
-
-function renderFieldStatus(){
-
-let now=new Date()
-
-let date=document.getElementById("date").value
-
-let html=""
-
-fields.forEach(f=>{
-
-let active=bookings.find(b=>{
-
-if(b.field!==f||b.date!==date) return false
-
-let start=new Date(b.date+" "+b.start)
-let end=new Date(b.date+" "+b.end)
-
-return now>=start && now<=end
-
-})
-
-if(active){
-
-let remain=remainingTime(active.date,active.end,f)
-
-html+=`
-<div class="fieldBox busy">
-${f}<br>
-🔴 Đang đá<br>
-${remain.text}
-</div>
-`
-
-}else{
-
-html+=`
-<div class="fieldBox free">
-${f}<br>
-🟢 Trống
-</div>
-`
-
-}
-
-})
-
-document.getElementById("fieldStatus").innerHTML=html
 
 }
 
@@ -348,15 +282,11 @@ let selectedDate=document.getElementById("date").value
 
 let list=bookings.filter(b=>b.date===selectedDate)
 
-list.sort((a,b)=>toMinutes(a.start)-toMinutes(b.start))
-
 list.forEach((b,i)=>{
 
 let money=calculateMoney(b.start,b.end)
 
 total+=money
-
-let remain=remainingTime(b.date,b.end,b.field)
 
 html+=`
 
@@ -368,9 +298,9 @@ html+=`
 <td>${b.name}</td>
 <td>${b.start}</td>
 <td>${b.end}</td>
-<td class="${remain.class}">${remain.text}</td>
+<td>-</td>
 <td>${b.phone}</td>
-<td>${money.toLocaleString()} VNĐ</td>
+<td>${money.toLocaleString()}</td>
 
 <td>
 <button onclick="deleteBooking(${i})">X</button>
@@ -388,6 +318,7 @@ document.getElementById("revenue").innerText=
 "Doanh thu: "+total.toLocaleString()+" VNĐ"
 
 renderFieldStatus()
+renderTimeTable()
 
 }
 
@@ -401,15 +332,118 @@ let target=list[i]
 
 let index=bookings.indexOf(target)
 
-if(index>-1){
-
 bookings.splice(index,1)
 
 save()
-
 render()
 
 }
+
+function renderFieldStatus(){
+
+let date=document.getElementById("date").value
+
+let html=""
+
+fields.forEach(f=>{
+
+let busy=bookings.find(b=>b.field==f && b.date==date)
+
+if(busy){
+
+html+=`<div class="fieldBox busy">${f}<br>🔴 Có lịch</div>`
+
+}else{
+
+html+=`<div class="fieldBox free">${f}<br>🟢 Trống</div>`
+
+}
+
+})
+
+document.getElementById("fieldStatus").innerHTML=html
+
+}
+
+function renderTimeTable(){
+
+let date=document.getElementById("date").value
+
+let html=""
+
+for(let h=6;h<=23;h++){
+
+let start=h.toString().padStart(2,"0")+":00"
+let end=(h+1).toString().padStart(2,"0")+":00"
+
+html+=`<tr><td>${start}-${end}</td>`
+
+fields.forEach(f=>{
+
+let busy=bookings.find(b=>{
+
+if(b.field!==f||b.date!==date) return false
+
+let s=toMinutes(b.start)
+let e=toMinutes(b.end)
+
+let hs=toMinutes(start)
+let he=toMinutes(end)
+
+return !(he<=s||hs>=e)
+
+})
+
+if(busy){
+
+html+=`<td class="slotBusy">Đã đặt</td>`
+
+}else{
+
+html+=`<td class="slotFree">Trống</td>`
+
+}
+
+})
+
+html+="</tr>"
+
+}
+
+document.getElementById("timeSlots").innerHTML=html
+
+}
+
+function exportExcel(){
+
+let date=document.getElementById("date").value
+
+let list=bookings.filter(b=>b.date===date)
+
+let data=list.map(b=>{
+
+return{
+
+Ma:b.id,
+Ngay:b.date,
+San:b.field,
+Khach:b.name,
+SDT:b.phone,
+BatDau:b.start,
+KetThuc:b.end,
+Tien:calculateMoney(b.start,b.end)
+
+}
+
+})
+
+let ws=XLSX.utils.json_to_sheet(data)
+
+let wb=XLSX.utils.book_new()
+
+XLSX.utils.book_append_sheet(wb,ws,"DoanhThu")
+
+XLSX.writeFile(wb,"doanh_thu_san.xlsx")
 
 }
 
@@ -420,8 +454,6 @@ localStorage.setItem("bookings",JSON.stringify(bookings))
 }
 
 document.getElementById("date").addEventListener("change",render)
-
-setInterval(render,1000)
 
 render()
 
