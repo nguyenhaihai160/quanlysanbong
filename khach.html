@@ -70,8 +70,52 @@ margin:auto;
 
 </div>
 
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <script>
 
+// CẤU HÌNH FIREBASE
+const firebaseConfig = {
+  apiKey: "AIzaSyBkBFNdREXKkpM-IgPg8g6c1C-CNRb7EoI",
+  authDomain: "quanlysanbong-ae0ec.firebaseapp.com",
+  databaseURL: "https://quanlysanbong-ae0ec-default-rtdb.firebaseio.com",
+  projectId: "quanlysanbong-ae0ec",
+  storageBucket: "quanlysanbong-ae0ec.appspot.com",
+  messagingSenderId: "351867228844",
+  appId: "1:351867228844:web:2ff782d295a9d28440c509"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.database();
+
+let bookings=[]
+
+// LẤY DỮ LIỆU REALTIME
+db.ref("bookings").on("value",(snap)=>{
+
+bookings=[]
+
+snap.forEach((s)=>{
+bookings.push(s.val())
+})
+
+})
+
+
+// CHUYỂN GIỜ → PHÚT
+function toMinutes(t){
+
+let p=t.split(":")
+return parseInt(p[0])*60+parseInt(p[1])
+
+}
+
+
+// ĐẶT SÂN
 function book(){
 
 let date=document.getElementById("date").value
@@ -81,18 +125,20 @@ let end=document.getElementById("end").value
 let name=document.getElementById("name").value
 let phone=document.getElementById("phone").value
 
-let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
+if(!date || !start || !end || !name){
+document.getElementById("msg").innerHTML="❌ Nhập đầy đủ thông tin"
+return
+}
 
-// kiểm tra trùng sân
+// kiểm tra trùng giờ
 for(let b of bookings){
 
 if(
 b.date===date &&
 b.field===field &&
-(
-(start>=b.start && start<b.end) ||
-(end>b.start && end<=b.end) ||
-(start<=b.start && end>=b.end)
+!(
+toMinutes(end)<=toMinutes(b.start) ||
+toMinutes(start)>=toMinutes(b.end)
 )
 ){
 document.getElementById("msg").innerHTML="❌ Sân đã có người đặt trong giờ này!"
@@ -101,8 +147,12 @@ return
 
 }
 
-// tạo dữ liệu đặt sân
+
+// TẠO MÃ ĐẶT SÂN
+let id="BK-"+Date.now()
+
 let data={
+id:id,
 date:date,
 field:field,
 start:start,
@@ -111,10 +161,9 @@ name:name,
 phone:phone
 }
 
-// lưu
-bookings.push(data)
 
-localStorage.setItem("bookings",JSON.stringify(bookings))
+// LƯU FIREBASE
+db.ref("bookings/"+id).set(data)
 
 document.getElementById("msg").innerHTML="✅ Đặt sân thành công!"
 
