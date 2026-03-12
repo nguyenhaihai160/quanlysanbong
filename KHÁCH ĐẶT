@@ -2,23 +2,40 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>Đặt Sân Bóng</title>
+<title>Quản Lý Sân Bóng</title>
 
 <style>
 
 body{
 font-family:Arial;
-text-align:center;
 background:#f4f4f4;
 padding:20px;
 }
 
-h1{color:#27ae60}
+h1{
+text-align:center;
+color:#27ae60;
+}
+
+.container{
+display:flex;
+flex-wrap:wrap;
+gap:20px;
+justify-content:center;
+}
+
+.box{
+background:white;
+padding:20px;
+border-radius:10px;
+width:400px;
+box-shadow:0 0 10px rgba(0,0,0,0.2);
+}
 
 input,select,button{
-width:90%;
-padding:12px;
-margin:8px;
+width:100%;
+padding:10px;
+margin:6px 0;
 font-size:16px;
 }
 
@@ -26,14 +43,24 @@ button{
 background:#27ae60;
 color:white;
 border:none;
+cursor:pointer;
 }
 
-.box{
-background:white;
-padding:20px;
-border-radius:10px;
-max-width:400px;
-margin:auto;
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px;
+}
+
+th,td{
+border:1px solid #ccc;
+padding:8px;
+text-align:center;
+}
+
+th{
+background:#27ae60;
+color:white;
 }
 
 </style>
@@ -41,9 +68,15 @@ margin:auto;
 
 <body>
 
+<h1>⚽ HỆ THỐNG QUẢN LÝ SÂN BÓNG</h1>
+
+<div class="container">
+
+<!-- KHÁCH ĐẶT SÂN -->
+
 <div class="box">
 
-<h1>⚽ Đặt Sân Bóng</h1>
+<h2>📱 Đặt Sân</h2>
 
 <input type="date" id="date">
 
@@ -63,9 +96,34 @@ margin:auto;
 
 <input placeholder="Số điện thoại" id="phone">
 
-<button onclick="book()">Đặt Sân</button>
+<button onclick="book()">Đặt sân</button>
 
 <p id="msg"></p>
+
+</div>
+
+<!-- TRANG QUẢN LÝ -->
+
+<div class="box">
+
+<h2>💻 Danh Sách Đặt Sân</h2>
+
+<table>
+
+<tr>
+<th>Ngày</th>
+<th>Sân</th>
+<th>Bắt đầu</th>
+<th>Kết thúc</th>
+<th>Tên</th>
+<th>SĐT</th>
+</tr>
+
+<tbody id="tableData"></tbody>
+
+</table>
+
+</div>
 
 </div>
 
@@ -74,12 +132,12 @@ margin:auto;
 function book(){
 
 let data={
-date:document.getElementById("date").value,
-field:document.getElementById("field").value,
-start:document.getElementById("start").value,
-end:document.getElementById("end").value,
-name:document.getElementById("name").value,
-phone:document.getElementById("phone").value
+date:date.value,
+field:field.value,
+start:start.value,
+end:end.value,
+name:name.value,
+phone:phone.value
 }
 
 let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
@@ -88,9 +146,38 @@ bookings.push(data)
 
 localStorage.setItem("bookings",JSON.stringify(bookings))
 
-document.getElementById("msg").innerHTML="✅ Đặt sân thành công!"
+msg.innerHTML="✅ Đặt sân thành công!"
+
+loadTable()
 
 }
+
+function loadTable(){
+
+let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
+
+tableData.innerHTML=""
+
+bookings.forEach(b=>{
+
+let row=document.createElement("tr")
+
+row.innerHTML=`
+<td>${b.date}</td>
+<td>${b.field}</td>
+<td>${b.start}</td>
+<td>${b.end}</td>
+<td>${b.name}</td>
+<td>${b.phone}</td>
+`
+
+tableData.appendChild(row)
+
+})
+
+}
+
+loadTable()
 
 </script>
 
