@@ -1,47 +1,182 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>QUẢN LÝ SÂN BÓNG</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+
+body{
+font-family:Arial;
+background:#f4f4f4;
+text-align:center;
+padding:20px;
+}
+
+h1{color:#27ae60}
+
+input,button,select{
+padding:10px;
+margin:5px;
+}
+
+button{
+background:#27ae60;
+color:white;
+border:none;
+cursor:pointer;
+}
+
+table{
+width:95%;
+margin:auto;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+border:1px solid #ddd;
+padding:10px;
+}
+
+th{
+background:#2ecc71;
+color:white;
+}
+
+.running{color:green;font-weight:bold}
+.warning{color:orange;font-weight:bold}
+.end{color:red;font-weight:bold}
+
+.fieldBox{
+display:inline-block;
+width:150px;
+padding:15px;
+margin:10px;
+border-radius:10px;
+font-size:18px;
+}
+
+.free{
+background:#d4edda;
+color:#155724;
+}
+
+.busy{
+background:#f8d7da;
+color:#721c24;
+}
+
+.slotFree{
+background:#d4edda
+}
+
+.slotBusy{
+background:#f8d7da
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>⚽ QUẢN LÝ SÂN BÓNG</h1>
+
+<h2>🏟 Trạng thái sân</h2>
+<div id="fieldStatus"></div>
+
+<hr>
+
+<div>
+
+<input type="date" id="date">
+
+<input id="name" placeholder="Tên khách">
+
+<input id="phone" placeholder="SĐT">
+
+<select id="field">
+<option>Sân 1</option>
+<option>Sân 2</option>
+<option>Sân 3</option>
+</select>
+
+<br>
+
+<label>Bắt đầu</label>
+<input type="time" id="start">
+
+<label>Kết thúc</label>
+<input type="time" id="end">
+
+<br>
+
+<button onclick="addBooking()">Đặt sân</button>
+
+</div>
+
+<h2>📅 Lịch sân</h2>
+
+<table>
+
+<thead>
+<tr>
+<th>Mã</th>
+<th>Ngày</th>
+<th>Sân</th>
+<th>Khách</th>
+<th>Bắt đầu</th>
+<th>Kết thúc</th>
+<th>Còn lại</th>
+<th>SĐT</th>
+<th>Tiền</th>
+<th>Xóa</th>
+</tr>
+</thead>
+
+<tbody id="schedule"></tbody>
+
+</table>
+
+<h2 id="revenue">Doanh thu: 0 VNĐ</h2>
+
+<button onclick="exportExcel()">📥 Xuất Excel</button>
+
+<hr>
+
+<h2>🕒 Kiểm tra khung giờ sân</h2>
+
+<table id="timeTable">
+
+<thead>
+<tr>
+<th>Giờ</th>
+<th>Sân 1</th>
+<th>Sân 2</th>
+<th>Sân 3</th>
+</tr>
+</thead>
+
+<tbody id="timeSlots"></tbody>
+
+</table>
+
 <script>
 
-// KẾT NỐI FIREBASE
-const firebaseConfig = {
-  apiKey: "AIzaSyBkBFNdREXKkpM-IgPg8g6c1C-CNRb7EoI",
-  authDomain: "quanlysanbong-ae0ec.firebaseapp.com",
-  databaseURL: "https://quanlysanbong-ae0ec-default-rtdb.firebaseio.com",
-  projectId: "quanlysanbong-ae0ec",
-  storageBucket: "quanlysanbong-ae0ec.appspot.com",
-  messagingSenderId: "351867228844",
-  appId: "1:351867228844:web:2ff782d295a9d28440c509"
-};
-
-firebase.initializeApp(firebaseConfig);
-
-const db = firebase.database();
-
-
-// DỮ LIỆU BOOKING REALTIME
-let bookings=[]
-
-db.ref("bookings").on("value",(snap)=>{
-
-bookings=[]
-
-snap.forEach((s)=>{
-bookings.push(s.val())
-})
-
-render()
-
-})
-
+let bookings=JSON.parse(localStorage.getItem("bookings"))||[]
 
 let fields=["Sân 1","Sân 2","Sân 3"]
 
 document.getElementById("date").valueAsDate=new Date()
 
-
 function toMinutes(t){
+
 let p=t.split(":")
 return parseInt(p[0])*60+parseInt(p[1])
-}
 
+}
 
 function generateBookingID(){
 
@@ -52,11 +187,11 @@ d.getFullYear()+
 String(d.getMonth()+1).padStart(2,"0")+
 String(d.getDate()).padStart(2,"0")
 
-let count=Date.now()
+let count=bookings.length+1
 
-return "SB-"+date+"-"+count
+return "SB-"+date+"-"+String(count).padStart(3,"0")
+
 }
-
 
 function getPrice(hour){
 
@@ -64,7 +199,6 @@ if(hour>=7 && hour<17) return 500000
 return 300000
 
 }
-
 
 function calculateMoney(start,end){
 
@@ -84,7 +218,6 @@ total+=getPrice(hour)
 return total
 
 }
-
 
 function checkConflict(field,start,end,date){
 
@@ -107,7 +240,6 @@ if(!(e<=bs||s>=be)) return true
 return false
 
 }
-
 
 function addBooking(){
 
@@ -132,22 +264,14 @@ return
 
 let id=generateBookingID()
 
-let booking={
+bookings.push({
 id,date,name,phone,field,start,end
-}
+})
 
-// LƯU FIREBASE
-db.ref("bookings/"+id).set(booking)
-
-}
-
-
-function deleteBooking(id){
-
-db.ref("bookings/"+id).remove()
+save()
+render()
 
 }
-
 
 function render(){
 
@@ -158,13 +282,11 @@ let selectedDate=document.getElementById("date").value
 
 let list=bookings.filter(b=>b.date===selectedDate)
 
-list.forEach((b)=>{
+list.forEach((b,i)=>{
 
 let money=calculateMoney(b.start,b.end)
 
 total+=money
-
-let remain=getRemain(b)
 
 html+=`
 
@@ -176,12 +298,12 @@ html+=`
 <td>${b.name}</td>
 <td>${b.start}</td>
 <td>${b.end}</td>
-<td>${remain}</td>
+<td>-</td>
 <td>${b.phone}</td>
 <td>${money.toLocaleString()}</td>
 
 <td>
-<button onclick="deleteBooking('${b.id}')">X</button>
+<button onclick="deleteBooking(${i})">X</button>
 </td>
 
 </tr>
@@ -200,26 +322,22 @@ renderTimeTable()
 
 }
 
+function deleteBooking(i){
 
-function getRemain(b){
+let selectedDate=document.getElementById("date").value
 
-let now=new Date()
+let list=bookings.filter(b=>b.date===selectedDate)
 
-let nowMin=now.getHours()*60+now.getMinutes()
+let target=list[i]
 
-let end=toMinutes(b.end)
-let start=toMinutes(b.start)
+let index=bookings.indexOf(target)
 
-if(nowMin<start) return "Chưa đá"
+bookings.splice(index,1)
 
-let remain=end-nowMin
-
-if(remain<=0) return "Hết giờ"
-
-return remain+" phút"
+save()
+render()
 
 }
-
 
 function renderFieldStatus(){
 
@@ -246,7 +364,6 @@ html+=`<div class="fieldBox free">${f}<br>🟢 Trống</div>`
 document.getElementById("fieldStatus").innerHTML=html
 
 }
-
 
 function renderTimeTable(){
 
@@ -297,6 +414,50 @@ document.getElementById("timeSlots").innerHTML=html
 
 }
 
+function exportExcel(){
+
+let date=document.getElementById("date").value
+
+let list=bookings.filter(b=>b.date===date)
+
+let data=list.map(b=>{
+
+return{
+
+Ma:b.id,
+Ngay:b.date,
+San:b.field,
+Khach:b.name,
+SDT:b.phone,
+BatDau:b.start,
+KetThuc:b.end,
+Tien:calculateMoney(b.start,b.end)
+
+}
+
+})
+
+let ws=XLSX.utils.json_to_sheet(data)
+
+let wb=XLSX.utils.book_new()
+
+XLSX.utils.book_append_sheet(wb,ws,"DoanhThu")
+
+XLSX.writeFile(wb,"doanh_thu_san.xlsx")
+
+}
+
+function save(){
+
+localStorage.setItem("bookings",JSON.stringify(bookings))
+
+}
+
 document.getElementById("date").addEventListener("change",render)
 
+render()
+
 </script>
+
+</body>
+</html>
